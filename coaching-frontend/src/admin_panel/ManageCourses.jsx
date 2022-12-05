@@ -228,6 +228,12 @@ const ManageCourses = () => {
                                         <input value={duration} onChange={(e) => setDuration(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
                                     </div>
                                 </div>
+                                <div className="mb-2 col">
+                                    <label htmlFor="">
+                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Videos</span>
+                                    </label>
+                                    <input type={"file"} webkitdirectory="" directory="" className="form-control form-control-sm shadow-sm" />
+                                </div>
 
                                 <div className="mb-2 col">
                                     <label htmlFor="">

@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useContext, useMemo, useCallback } from 'react'
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import { useContext } from 'react';
 import { v4 as uuid } from 'uuid';
 import { AuthenticationContext, server } from '../App'
 import axios from 'axios';
 import swal from 'sweetalert';
+import Dropzone, { useDropzone } from 'react-dropzone'
 
 const ManageCourses = () => {
     const { userData, setCourses, courses } = useContext(AuthenticationContext)
@@ -16,6 +16,7 @@ const ManageCourses = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
     const [image, setImage] = useState("")
+    const [myFiles, setMyFiles] = useState([])
     const storage = getStorage();
 
     const close = useRef()
@@ -27,7 +28,111 @@ const ManageCourses = () => {
             })
     }, [])
 
-    function clearData(){
+
+    const baseStyle = {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px',
+        borderWidth: 2,
+        borderRadius: 2,
+        borderColor: '#eeeeee',
+        borderStyle: 'dashed',
+        backgroundColor: '#fafafa',
+        color: '#bdbdbd',
+        outline: 'none',
+        transition: 'border .24s ease-in-out'
+    };
+
+    const focusedStyle = {
+        borderColor: '#2196f3'
+    };
+
+    const acceptStyle = {
+        borderColor: '#00e676'
+    };
+
+    const rejectStyle = {
+        borderColor: '#ff1744'
+    };
+
+
+    function Basic(props) {
+
+        const onDrop = useCallback(acceptedFiles => {
+            setMyFiles([...myFiles, ...acceptedFiles])
+        }, [myFiles])
+
+        const {
+            getRootProps,
+            getInputProps,
+            isFocused,
+            isDragAccept,
+            isDragReject,
+            acceptedFiles,
+
+        } = useDropzone({ onDrop });
+
+
+
+        const removeFile = file => {
+            const newFiles = [...myFiles]
+            console.log(myFiles)
+            newFiles.splice(newFiles.indexOf(file), 1)
+            setMyFiles(newFiles)
+        }
+
+        const files = myFiles.map((file, i) => (
+            <div className="container mx-0 rounded-2 mb-1" key={file.path} style={{ backgroundColor: "#F5F5F5" }}>
+                <div className="d-flex justify-content-between">
+                    <div>
+                        <p className='my-0 mt-1' style={{ fontFamily: "Poppins", fontSize: "12px" }}>
+                            {file.name}
+                        </p>
+                        <p className='my-0 fw-light' style={{ fontFamily: "Poppins", fontSize: "11px" }}>
+                            Size - {(file.size * 0.000001).toFixed(2)} MBs
+                        </p>
+                    </div>
+                    <button onClick={() => removeFile(file)} className="btn-link btn px-0" style={{ fontFamily: "Poppins", fontSize: "11px" }}>
+                        DELETE
+                    </button>
+                </div>
+            </div>
+        ));
+
+        const style = useMemo(() => ({
+            ...baseStyle,
+            ...(isFocused ? focusedStyle : {}),
+            ...(isDragAccept ? acceptStyle : {}),
+            ...(isDragReject ? rejectStyle : {})
+        }), [
+            isFocused,
+            isDragAccept,
+            isDragReject
+        ]);
+
+        return (
+            <div className="container-fluid mx-0 px-0">
+                <div {...getRootProps({ style })}>
+                    <input {...getInputProps()} />
+                    <p className='m-0'>Drag and drop folder to upload.</p>
+                </div>
+
+                {
+                    files.length > 0
+                    &&
+                    <aside>
+                        <h4 className='fs-6 fw-light' style={{ fontFamily: "Poppins" }}>Files</h4>
+                        {files}
+                    </aside>
+                }
+            </div>
+        );
+    }
+
+
+    function clearData() {
         setName("")
         setPrice("")
         setDuration("")
@@ -40,7 +145,7 @@ const ManageCourses = () => {
 
     function addImage() {
         setIsLoading(true)
-        if (name == "" || price == "" || duration == "" || instructor == "" || description == "" || image == "") {
+        if (name == "" || price == "" || duration == "" || instructor == "" || description == "" || image == "" || myFiles.length === 0) {
             setError("No blank field should be left.");
             setIsLoading(false)
             return
@@ -62,9 +167,34 @@ const ManageCourses = () => {
             })
             .catch(() => {
                 setIsLoading(false)
-                
+
                 setError("There was an error in uploading image. Please try again.");
             })
+    }
+
+    function uploadVideos() {
+        myFiles.forEach(file => {
+            const uuID = uuid()
+            const storageRef = ref(storage, `courses-thumbnail/${file}-${uuID}`)
+            uploadBytes(storageRef, image, {
+                contentType: 'image/jpeg',
+            })
+                .then((snapshot) => {
+                    getDownloadURL(snapshot.ref)
+                        .then((url) => {
+                            addCourse(url)
+                        })
+                        .catch(() => {
+                            setIsLoading(false)
+                            setError("There was an error in uploading image. Please try again.")
+                        })
+                })
+                .catch(() => {
+                    setIsLoading(false)
+
+                    setError("There was an error in uploading image. Please try again.");
+                })
+        });
     }
 
     function addCourse(imageUrl) {
@@ -78,11 +208,11 @@ const ManageCourses = () => {
         })
             .then((res) => {
                 setIsLoading(false)
-                
+
                 if (res.status === 200) {
                     clearData()
                     swal({
-                        title:"Course Inserted Successfully.",
+                        title: "Course Inserted Successfully.",
                         icon: "success"
                     })
                     setCourses(res.data)
@@ -93,19 +223,19 @@ const ManageCourses = () => {
             })
             .catch(() => {
                 setIsLoading(false)
-                
+
                 setError("Some error occured. Please try again.");
             })
     }
 
-    function deleteCourse(id){
+    function deleteCourse(id) {
         axios.delete(`http://127.0.0.1:8000/api/courses/delete/${id}`)
-        .then((res) => {
-            setCourses(res.data)
-        })
-        .catch((err) => {
-            console.log(err)
-        })
+            .then((res) => {
+                setCourses(res.data)
+            })
+            .catch((err) => {
+                console.log(err)
+            })
     }
 
     return (
@@ -190,80 +320,82 @@ const ManageCourses = () => {
             </div>
 
 
-                <div className="modal border-0 fade" id='addcourse'>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-body">
+            <div className="modal border-0 fade" id='addcourse'>
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-body">
+                            <div className="mb-2 col">
+                                <label htmlFor="">
+                                    <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Name</span>
+                                </label>
+                                <input value={name} onChange={(e) => setName(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
+                            </div>
+                            <div className="row">
                                 <div className="mb-2 col">
                                     <label htmlFor="">
-                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Name</span>
+                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Price</span>
                                     </label>
-                                    <input value={name} onChange={(e) => setName(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
-                                </div>
-                                <div className="row">
-                                    <div className="mb-2 col">
-                                        <label htmlFor="">
-                                            <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Price</span>
-                                        </label>
-                                        <input value={price} onChange={(e) => setPrice(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
-                                    </div>
-                                    <div className="mb-2 col">
-                                        <label htmlFor="">
-                                            <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Thumbnail</span>
-                                        </label>
-                                        <input accept="image/*" onChange={(e) => setImage(e.target.files[0])} type="file" name="" className="form-control form-control-sm shadow-sm" />
-                                    </div>
-                                </div>
-                                <div className="row">
-                                    <div className="mb-2 col">
-                                        <label htmlFor="">
-                                            <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Instructor</span>
-                                        </label>
-                                        <input value={instructor} onChange={(e) => setInstructor(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
-                                    </div>
-                                    <div className="mb-2 col">
-                                        <label htmlFor="">
-                                            <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Duration</span>
-                                        </label>
-                                        <input value={duration} onChange={(e) => setDuration(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
-                                    </div>
+                                    <input value={price} onChange={(e) => setPrice(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
                                 </div>
                                 <div className="mb-2 col">
                                     <label htmlFor="">
-                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Videos</span>
+                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Thumbnail</span>
                                     </label>
-                                    <input type={"file"} webkitdirectory="" directory="" className="form-control form-control-sm shadow-sm" />
-                                </div>
+                                    <input accept="image/*" onChange={(e) => setImage(e.target.files[0])} type="file" name="" className="form-control form-control-sm shadow-sm" />
 
+                                </div>
+                            </div>
+                            <div className="row">
                                 <div className="mb-2 col">
                                     <label htmlFor="">
-                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Description</span>
+                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Instructor</span>
                                     </label>
-                                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px", height: "150px" }} type="text" name="" className="form-control form-control-sm shadow-sm" >
-
-                                    </textarea>
+                                    <input value={instructor} onChange={(e) => setInstructor(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
                                 </div>
                                 <div className="mb-2 col">
-                                    <button onClick={addImage} disabled={isLoading} className="btn btn-dark rounded-3 btn-lg w-100">
-                                        {
-                                            isLoading
-                                                ?
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Loading...</span>
-                                                </div>
-                                                :
-                                                <p style={{ fontFamily: "Poppins" }} className='m-0'>Add Course</p>
-                                        }
-                                    </button>
-
-                                    <button data-bs-dismiss="modal" data-bs-target="#addcourse" className="btn btn-danger rounded-3 w-100 mt-2">
-                                        <p style={{ fontFamily: "Poppins" }} className='m-0'>Close</p>
-                                    </button>
+                                    <label htmlFor="">
+                                        <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Duration</span>
+                                    </label>
+                                    <input value={duration} onChange={(e) => setDuration(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px" }} type="text" name="" className="form-control form-control-sm shadow-sm" />
                                 </div>
+                            </div>
+                            <div className="mb-2 col">
+                                <label htmlFor="">
+                                    <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Videos</span>
+                                </label>
+                                {/* <input type={"file"} webkitdirectory="" directory="" className="form-control form-control-sm shadow-sm" /> */}
+                                <Basic />
+                            </div>
+
+                            <div className="mb-2 col">
+                                <label htmlFor="">
+                                    <span className="fw-light" style={{ fontFamily: "Poppins", fontSize: "15px" }}>Course Description</span>
+                                </label>
+                                <textarea value={description} onChange={(e) => setDescription(e.target.value)} style={{ fontFamily: "Poppins", fontSize: "15px", height: "150px" }} type="text" name="" className="form-control form-control-sm shadow-sm" >
+
+                                </textarea>
+                            </div>
+                            <div className="mb-2 col">
+                                <button onClick={addImage} disabled={isLoading} className="btn btn-dark rounded-3 btn-lg w-100">
+                                    {
+                                        isLoading
+                                            ?
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            :
+                                            <p style={{ fontFamily: "Poppins" }} className='m-0'>Add Course</p>
+                                    }
+                                </button>
+
+                                <button data-bs-dismiss="modal" data-bs-target="#addcourse" className="btn btn-danger rounded-3 w-100 mt-2">
+                                    <p style={{ fontFamily: "Poppins" }} className='m-0'>Close</p>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
     )
 }

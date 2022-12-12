@@ -5,7 +5,6 @@ import { AuthenticationContext, server } from '../App'
 import axios from 'axios';
 import swal from 'sweetalert';
 import Dropzone, { useDropzone } from 'react-dropzone'
-
 const ManageCourses = () => {
     const { userData, setCourses, courses } = useContext(AuthenticationContext)
     const [name, setName] = useState("")
@@ -18,9 +17,10 @@ const ManageCourses = () => {
     const [image, setImage] = useState("")
     const [myFiles, setMyFiles] = useState([])
     const storage = getStorage();
-
+    const [linkarray,setLinkarray] = useState([]);
+    
     const close = useRef()
-
+    
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/courses")
             .then((res) => {
@@ -64,6 +64,10 @@ const ManageCourses = () => {
             setMyFiles([...myFiles, ...acceptedFiles])
         }, [myFiles])
 
+        const handleValidation = (meta) => {
+            return myFiles.find(e => e.name === meta.name && e.size === meta.size && e.type === meta.type)
+
+        }
         const {
             getRootProps,
             getInputProps,
@@ -72,11 +76,15 @@ const ManageCourses = () => {
             isDragReject,
             acceptedFiles,
 
-        } = useDropzone({ onDrop });
+        } = useDropzone({
+            onDrop,
+            validator: handleValidation
 
+        });
 
 
         const removeFile = file => {
+            console.log(file)
             const newFiles = [...myFiles]
             console.log(myFiles)
             newFiles.splice(newFiles.indexOf(file), 1)
@@ -88,10 +96,10 @@ const ManageCourses = () => {
                 <div className="d-flex justify-content-between">
                     <div>
                         <p className='my-0 mt-1' style={{ fontFamily: "Poppins", fontSize: "12px" }}>
-                            {file.name}
+                            {i + 1} - {file.name}
                         </p>
                         <p className='my-0 fw-light' style={{ fontFamily: "Poppins", fontSize: "11px" }}>
-                            Size - {(file.size * 0.000001).toFixed(2)} MBs
+                            Size - {(file.size * 0.000001).toFixed(3)} MBs
                         </p>
                     </div>
                     <button onClick={() => removeFile(file)} className="btn-link btn px-0" style={{ fontFamily: "Poppins", fontSize: "11px" }}>
@@ -158,6 +166,7 @@ const ManageCourses = () => {
             .then((snapshot) => {
                 getDownloadURL(snapshot.ref)
                     .then((url) => {
+                        uploadVideos();
                         addCourse(url)
                     })
                     .catch(() => {
@@ -167,48 +176,49 @@ const ManageCourses = () => {
             })
             .catch(() => {
                 setIsLoading(false)
-
                 setError("There was an error in uploading image. Please try again.");
             })
     }
 
     function uploadVideos() {
-        myFiles.forEach(file => {
-            const uuID = uuid()
-            const storageRef = ref(storage, `courses-thumbnail/${file}-${uuID}`)
-            uploadBytes(storageRef, image, {
-                contentType: 'image/jpeg',
-            })
-                .then((snapshot) => {
-                    getDownloadURL(snapshot.ref)
-                        .then((url) => {
-                            addCourse(url)
-                        })
-                        .catch(() => {
-                            setIsLoading(false)
-                            setError("There was an error in uploading image. Please try again.")
-                        })
+        let temparray = []
+        myFiles.forEach((file,i) => {
+            const storageRef = ref(storage, `courses-videos/${name}/${file.name}`)
+                uploadBytes(storageRef, file, {
+                    contentType: file.type,
                 })
-                .catch(() => {
-                    setIsLoading(false)
-
-                    setError("There was an error in uploading image. Please try again.");
-                })
+                    .then((snapshot) => {
+                        getDownloadURL(snapshot.ref)
+                            .then((url) => {
+                                temparray[i] = url
+                            })
+                            .catch(() => {
+                                setIsLoading(false)
+                                setError("There was an error in uploading image. Please try again.")
+                            })
+                    })
+                    .catch(() => {
+                        setIsLoading(false)
+                        setError("There was an error in uploading image. Please try again.");
+                    })
         });
+        setLinkarray(temparray)
     }
 
     function addCourse(imageUrl) {
+        console.log(linkarray)
         axios.post("http://127.0.0.1:8000/api/courses/store", {
             course_name: name,
             price: price,
             image: imageUrl,
+            video: linkarray,
             instructor: instructor,
             description: description,
             duration: duration,
         })
             .then((res) => {
                 setIsLoading(false)
-
+                console.log(res.data)
                 if (res.status === 200) {
                     clearData()
                     swal({
@@ -221,9 +231,9 @@ const ManageCourses = () => {
                     setError("Some error occured. Please try again.");
                 }
             })
-            .catch(() => {
+            .catch((err) => {
                 setIsLoading(false)
-
+                console.log(err)
                 setError("Some error occured. Please try again.");
             })
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Courses;
+use App\Models\CourseVideo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -27,18 +28,25 @@ class CoursesController extends Controller
             'instructor' => 'required',
             'duration' => 'required',
             'image' => 'required',
+            'video' => 'required',
             'price' => 'required',
             'description' => 'required',
         ]);
 
         if($data->fails()){
-            return response()->json(["msg" => $data->errors()], 200);
+            return response()->json(["msg" => $data->errors()], 400);
         }
         else{
-            if(Courses::create($data->validated())){
-                $courses = Courses::all();
-                return response()->json($courses, 200);
+            $newcourse = Courses::create($data->safe()->except(['video']));
+            foreach ($request->video as $key => $vid) {
+                $cv = new CourseVideo();
+                $cv->courses_id = $newcourse->id;
+                $cv->video_serial  =$key+1;
+                $cv->video_url = $vid;
+                $cv->save();
             }
+            $courses = Courses::all();
+            return response()->json($courses, 200);
         }
     }
 

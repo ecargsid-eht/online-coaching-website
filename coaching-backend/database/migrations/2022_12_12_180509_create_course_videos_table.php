@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('course_videos', function (Blueprint $table) {
             $table->id();
             $table->foreignId("courses_id")->constrained()->onDelete('cascade');
+            $table->string("video_name");
+            $table->string("video_length")->nullable();
             $table->integer("video_serial");
             $table->longText("video_url");
             $table->timestamps();

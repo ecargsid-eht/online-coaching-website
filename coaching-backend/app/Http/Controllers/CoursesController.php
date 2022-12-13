@@ -38,11 +38,12 @@ class CoursesController extends Controller
         }
         else{
             $newcourse = Courses::create($data->safe()->except(['video']));
-            foreach ($request->video as $key => $vid) {
+            foreach ($request->video as $vid) {
                 $cv = new CourseVideo();
                 $cv->courses_id = $newcourse->id;
-                $cv->video_serial  =$key+1;
-                $cv->video_url = $vid;
+                $cv->video_name  = $vid['video_name'];
+                $cv->video_serial  =$vid['video_serial']+1;
+                $cv->video_url = $vid['url'];
                 $cv->save();
             }
             $courses = Courses::all();
@@ -58,7 +59,8 @@ class CoursesController extends Controller
      */
     public function show($id)
     {
-        //
+        $course = Courses::where("id",$id)->with("courseVideos")->get();
+        return response()->json($course,200);
     }
 
     /**

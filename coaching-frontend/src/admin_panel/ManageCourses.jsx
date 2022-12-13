@@ -16,11 +16,12 @@ const ManageCourses = () => {
     const [error, setError] = useState("")
     const [image, setImage] = useState("")
     const [myFiles, setMyFiles] = useState([])
+    const [status,setStatus] = useState("")
     const storage = getStorage();
-    const [linkarray,setLinkarray] = useState([]);
-    
+    const [linkarray, setLinkarray] = useState([]);
+
     const close = useRef()
-    
+
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/courses")
             .then((res) => {
@@ -78,7 +79,11 @@ const ManageCourses = () => {
 
         } = useDropzone({
             onDrop,
-            validator: handleValidation
+            validator: handleValidation,
+            accept: {
+                "video/*": ['.mp4', '.mkv', ".mpg", '.m4p', '.m4v', '.avi', '.mov', '.flv', '.mpeg']
+            },
+            multiple: true
 
         });
 
@@ -148,6 +153,7 @@ const ManageCourses = () => {
         setDescription("")
         setError("")
         setImage("")
+        temparray = [] //not working as of now.
     }
 
 
@@ -158,6 +164,7 @@ const ManageCourses = () => {
             setIsLoading(false)
             return
         }
+        setStatus("Uploading Course Thumbnail...")
         const uuID = uuid()
         const storageRef = ref(storage, `courses-thumbnail/${userData?.user.id}-${uuID}`)
         uploadBytes(storageRef, image, {
@@ -166,8 +173,9 @@ const ManageCourses = () => {
             .then((snapshot) => {
                 getDownloadURL(snapshot.ref)
                     .then((url) => {
-                        uploadVideos();
-                        addCourse(url)
+                        uploadVideos(url);
+                    setStatus("Uploading Course Videos...")
+
                     })
                     .catch(() => {
                         setIsLoading(false)
@@ -180,17 +188,30 @@ const ManageCourses = () => {
             })
     }
 
-    function uploadVideos() {
-        let temparray = []
-        myFiles.forEach((file,i) => {
-            const storageRef = ref(storage, `courses-videos/${name}/${file.name}`)
+    let temparray = []
+    function uploadVideos(imageUrl) {
+        const loop = new Promise((resolve, reject) => {
+            myFiles.forEach((file, i) => {
+                const storageRef = ref(storage, `courses-videos/${name}/${file.name}`)
                 uploadBytes(storageRef, file, {
                     contentType: file.type,
                 })
                     .then((snapshot) => {
                         getDownloadURL(snapshot.ref)
                             .then((url) => {
-                                temparray[i] = url
+                                temparray.push({
+                                    video_serial: i,
+                                    video_name: file.name,
+                                    url: url
+                                })
+                                console.log("here")
+                            })
+                            .then(() => {
+                                console.log(myFiles.length,i)
+                                if(temparray.length === myFiles.length){
+                                    console.log(temparray,"final")
+                                    resolve()
+                                }
                             })
                             .catch(() => {
                                 setIsLoading(false)
@@ -201,17 +222,22 @@ const ManageCourses = () => {
                         setIsLoading(false)
                         setError("There was an error in uploading image. Please try again.");
                     })
-        });
-        setLinkarray(temparray)
+            });
+        })
+    
+        loop.then(() => {
+            setStatus("Uploading Course Details (Final Step)...")
+            addCourse(imageUrl,temparray)
+        })
     }
 
-    function addCourse(imageUrl) {
-        console.log(linkarray)
+    function addCourse(imageUrl,video) {
+        console.log("new data")
         axios.post("http://127.0.0.1:8000/api/courses/store", {
             course_name: name,
             price: price,
             image: imageUrl,
-            video: linkarray,
+            video: video,
             instructor: instructor,
             description: description,
             duration: duration,
@@ -390,11 +416,17 @@ const ManageCourses = () => {
                                     {
                                         isLoading
                                             ?
-                                            <div class="spinner-border" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
+                                            <>
+                                                <div class="spinner-border" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p style={{ fontFamily: "Poppins",fontSize:"10px",color:"#0096FF"}} className='m-0'>{status}</p>
+                                            </>
                                             :
+                                            <>
                                             <p style={{ fontFamily: "Poppins" }} className='m-0'>Add Course</p>
+                                             
+                                            </>
                                     }
                                 </button>
 

@@ -10,6 +10,8 @@ class Courses extends Model
     use HasFactory;
     protected $guarded = [];
 
-
+    public function courseVideos(){
+        return $this->hasMany(CourseVideo::class);
+    }
     
 }

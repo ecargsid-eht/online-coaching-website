@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useContext, useEffect } from 'react'
 import { useState } from 'react'
 import Lottie from 'react-lottie';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useParams } from 'react-router-dom';
 import { AuthenticationContext } from '../App';
 import * as empty from '../assets/empty.json'
 
@@ -20,9 +20,6 @@ const Profile = () => {
             preserveAspectRatio: 'xMidYMid slice'
         }
     };
-    useEffect(() => {
-        console.log(enrollments)
-    },[enrollments])
 
     useEffect(() => {
         axios.get("http://127.0.0.1:8000/api/enrollments", {

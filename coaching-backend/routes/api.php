@@ -39,6 +39,7 @@ Route::delete('/students/delete/{s}',[StudentController::class,"destroy"]);
 Route::post('/students/update',[StudentController::class,"update"]);
 Route::post('/courses/store',[CoursesController::class,"store"]);
 Route::get('/courses',[CoursesController::class,"index"]);
+Route::get('/courses/{id}',[CoursesController::class,"show"]);
 Route::delete('/courses/delete/{c}',[CoursesController::class,"destroy"]);
 Route::post('/courses/update/{c}',[CoursesController::class,"update"]);
 Route::get("/enrollments",[EnrollmentController::class,"index"]);

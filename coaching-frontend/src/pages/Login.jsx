@@ -32,7 +32,7 @@ const Login = () => {
             password: password
         })
             .then((res) => {
-                console.log(res.data)
+                console.log(res.data,"user")
                 if (res.status === 200) {
                     console.log(res.data)
                     signInWithEmailAndPassword(auth, email, password)

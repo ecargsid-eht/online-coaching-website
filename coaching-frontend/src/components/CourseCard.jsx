@@ -2,7 +2,7 @@ import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthenticationContext } from '../App'
 
-const CourseCard = ({id,course}) => {
+const CourseCard = ({course}) => {
 
     const navigate = useNavigate()
     const {enrollments} = useContext(AuthenticationContext)
@@ -38,7 +38,7 @@ const CourseCard = ({id,course}) => {
                     {
                         enrollments.some((e) => e.course_id === course.id) 
                         ?
-                        <button onClick={() => navigate("/profile")} className="btn btn-dark btn-sm rounded-3 shadow-sm py-2 fw-bold col" style={{ fontFamily: "Poppins" }}>Open Course</button>
+                        <button onClick={() => navigate(`/my-courses/${course.id}`)} className="btn btn-dark btn-sm rounded-3 shadow-sm py-2 fw-bold col" style={{ fontFamily: "Poppins" }}>Open Course</button>
                         :
                         <>
                         <button data-bs-toggle="modal" data-bs-target="#detailsModal" className="btn btn-outline-dark  btn-sm rounded-3 shadow-sm py-2 fw-bold col" style={{ fontFamily: "Poppins" }}>CHECK DETAILS</button>

@@ -59,7 +59,9 @@ class CoursesController extends Controller
      */
     public function show($id)
     {
-        $course = Courses::where("id",$id)->with("courseVideos")->get();
+        $course = Courses::where("id",$id)->with("courseVideos",function($query){
+            $query->orderBy('video_serial');
+        })->first();
         return response()->json($course,200);
     }
 

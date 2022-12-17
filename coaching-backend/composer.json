@@ -12,7 +12,9 @@
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
         "php-open-source-saver/jwt-auth": "^2.0",
-        "razorpay/razorpay": "^2.8"
+        "razorpay/razorpay": "^2.8",
+        "vimeo/laravel": "^5.7",
+        "vimeo/vimeo-api": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

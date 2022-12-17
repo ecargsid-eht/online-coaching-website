@@ -38,7 +38,7 @@ const Checkout = () => {
             orderId = res.data
             
             var options = {
-                "key": "rzp_test_3OntfWePzzIh5K", // Enter the Key ID generated from the Dashboard
+                "key": "rzp_test_H8SmtrU4Fg7rpa", // Enter the Key ID generated from the Dashboard
                 "amount": course.price * 100, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
                 "currency": "INR",
                 "name": "EdTech",   

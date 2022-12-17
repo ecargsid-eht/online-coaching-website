@@ -6,6 +6,7 @@ use App\Models\Courses;
 use App\Models\CourseVideo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Vimeo\Laravel\Facades\Vimeo;
 
 class CoursesController extends Controller
 {
@@ -38,12 +39,19 @@ class CoursesController extends Controller
         }
         else{
             $newcourse = Courses::create($data->safe()->except(['video']));
+            
             foreach ($request->video as $vid) {
+                $uri = Vimeo::upload($vid['video_url'],[
+                    'name' => $vid['video_name'],
+                ]);
+
+                $res = Vimeo::request($uri.'?fields=link');
+
                 $cv = new CourseVideo();
                 $cv->courses_id = $newcourse->id;
                 $cv->video_name  = $vid['video_name'];
                 $cv->video_serial  =$vid['video_serial']+1;
-                $cv->video_url = $vid['url'];
+                $cv->video_url = $res['body']['link'];
                 $cv->save();
             }
             $courses = Courses::all();

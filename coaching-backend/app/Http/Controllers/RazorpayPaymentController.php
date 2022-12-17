@@ -19,7 +19,7 @@ class RazorpayPaymentController extends Controller
     {        
         $key_id = env("RAZORPAY_KEY");
         $secret = env("RAZORPAY_SECRET");
-        $api = new Api($key_id, $secret);
+        $api = new Api($key_id,$secret);
 
         $order = $api->order->create(array('amount' => $req->amount, 'currency' => 'INR'));
         return response()->json($order['id'],200);

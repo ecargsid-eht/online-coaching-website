@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RazorpayPaymentController;
+use App\Http\Controllers\VimeoController;
 use App\Models\Enrollment;
 
 /*
@@ -47,5 +48,7 @@ Route::get("/enrollments/get-status",[EnrollmentController::class,"getStatus"]);
 Route::post('/enrollments/store',[EnrollmentController::class,"store"]);
 Route::get("/alumni",[AlumniController::class,"index"]);
 Route::post("/alumni/store",[AlumniController::class,"store"]);
+Route::post('/upload/video',[VimeoController::class,"uploadVideo"]);
+
 Route::get('/razorpay-payment', [RazorpayPaymentController::class, 'index']);
 // Route::post('razorpay-payment', [RazorpayPaymentController::class, 'store'])->name('razorpay.payment.store');

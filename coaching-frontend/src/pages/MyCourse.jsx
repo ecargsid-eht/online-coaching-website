@@ -10,7 +10,7 @@ function MyCourse() {
   const [video,setVideo] = useState("")
 
   useEffect(() => {
-    handleVideo(course?.course_videos[0].video_url)
+    setVideo(course?.course_videos[0].video_url)
   },[course])
 
   useEffect(() => {
@@ -21,6 +21,7 @@ function MyCourse() {
   }, [course_id])
 
   function handleVideo(url){
+    setVideo("")
     fetch(url)
     .then((r) => r.blob())
     .then(blob => {
@@ -39,7 +40,7 @@ function MyCourse() {
             <div className="list-group mx-3 pt-5">
               {
                 course?.course_videos?.map((video) => (
-                  <Link to="" onClick={() => handleVideo(video.video_url)} className='list-group-item rounded-3 list-group-item-action border-0 py-3 my-1' style={{ fontFamily: "Poppins", fontSize: "13px", fontWeight: "400", }}>
+                  <Link to="" onClick={() => setVideo(video.video_url)} className='list-group-item rounded-3 list-group-item-action border-0 py-3 my-1' style={{ fontFamily: "Poppins", fontSize: "13px", fontWeight: "400", }}>
                     {/* <i class="bi bi-house-door-fill me-2"></i> */}
                     {video.video_serial}. {video.video_name}
                   </Link>
@@ -63,15 +64,16 @@ function MyCourse() {
             // Your props
             url={video}
             className="react-player"
+            playing
             controls
             style={{
               overflow:"hidden",
               borderRadius:"20px",
               backgroundColor:'gray',
             }}
-            onReady={() => {
-              URL.revokeObjectURL(video)
-            }}
+            // onReady={() => {
+            //   URL.revokeObjectURL(video)
+            // }}
             width="100%"
             height="80vh"
           />

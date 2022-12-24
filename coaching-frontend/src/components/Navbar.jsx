@@ -17,6 +17,7 @@ export default function Navbar() {
             <p className="fs-4 fw-bold pb-0 m-0" style={{ fontFamily: "Poppins" }}>EdTech</p>
           </Link>
 
+
           <ul className="navbar-nav text-center">
             <li className="nav-item">
               <Link to="/" href="" className="nav-link">
